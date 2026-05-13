@@ -1,1 +1,100 @@
 
+name: Validate Code
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download repository code
+        uses: actions/checkout@v4
+
+      - name: Show files
+        run: |
+          echo "Files uploaded to repository:"
+          find . -type f \
+            -not -path "./.git/*" \
+            -not -path "./.github/workflows/*"
+
+      - name: Validate Python files
+        run: |
+          echo "Checking Python files..."
+
+          files=$(find . -name "*.py" -not -path "./.git/*")
+
+          if [ -z "$files" ]; then
+            echo "No Python files found."
+          else
+            for file in $files; do
+              echo "Checking $file"
+              python -m py_compile "$file"
+            done
+          fi
+
+      - name: Validate JavaScript files
+        run: |
+          echo "Checking JavaScript files..."
+
+          files=$(find . \( -name "*.js" -o -name "*.mjs" -o -name "*.cjs" \) -not -path "./.git/*")
+
+          if [ -z "$files" ]; then
+            echo "No JavaScript files found."
+          else
+            for file in $files; do
+              echo "Checking $file"
+              node --check "$file"
+            done
+          fi
+
+      - name: Validate C files
+        run: |
+          echo "Checking C files..."
+
+          files=$(find . -name "*.c" -not -path "./.git/*")
+
+          if [ -z "$files" ]; then
+            echo "No C files found."
+          else
+            for file in $files; do
+              echo "Checking $file"
+              gcc -fsyntax-only "$file"
+            done
+          fi
+
+      - name: Validate C++ files
+        run: |
+          echo "Checking C++ files..."
+
+          files=$(find . \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" \) -not -path "./.git/*")
+
+          if [ -z "$files" ]; then
+            echo "No C++ files found."
+          else
+            for file in $files; do
+              echo "Checking $file"
+              g++ -std=c++17 -fsyntax-only "$file"
+            done
+          fi
+
+      - name: Validate Java files
+        run: |
+          echo "Checking Java files..."
+
+          files=$(find . -name "*.java" -not -path "./.git/*")
+
+          if [ -z "$files" ]; then
+            echo "No Java files found."
+          else
+            mkdir -p /tmp/java-build
+            javac -d /tmp/java-build $files
+          fi
+
+      - name: Success message
+        run: echo "Code validation completed successfully."
